@@ -15,22 +15,29 @@ fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
         let mut line = String::new();
         input.read_line(&mut line)?;
 
-        let input = line.trim();
+        let values = line.split_ascii_whitespace().enumerate();
 
-        if input.len() == 0 {
-            break;
-        }
-
-        let values = input.split_ascii_whitespace().enumerate();
-
+        let mut value_count = 0;
         for (index, value) in values {
             let value = NonZeroU8::from_str(value).ok();
-            if let Some(n) = value {
-                if u8::from(n) > 9u8 {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "Cell value is greater than 9"));
+
+            if let Some(n) = value.map(u8::from) {
+                if n > 9u8 {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "Cell value is greater than 9"));
                 }
             }
+
             grid[line_number][index] = value;
+
+            value_count += 1;
+        }
+
+        if value_count != 9 {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "Line does not contain 9 values"));
+        }
+
+        if line_number == 8 {
+            break;
         }
 
         line_number += 1;
@@ -215,7 +222,7 @@ mod tests {
                             _ 7 _ _ _ 9 6 _ 2\n\
                             3 1 _ 9 _ _ _ 6 _\n\
                             _ 5 _ 6 _ 4 _ _ 9\n\
-                            6 _ 8 3 1 _ 4 2 _\n\n";
+                            6 _ 8 3 1 _ 4 2 _\n";
 
         let expected_output =  [
             [None, n(6), n(2), None, n(9), n(8), n(1), None, n(4)],
@@ -246,7 +253,7 @@ mod tests {
                 _ 7 _ _ _ 9 6 _ 2\n\
                 3 1 _ 9 _ _ _ 6 _\n\
                 _ 5 _ 6 _ 4 _ _ 9\n\
-                6 _ 8 3 1 _ 4 2 _\n\n",
+                6 _ 8 3 1 _ 4 2 _\n",
 
                 "7 6 2 5 9 8 1 3 4\n\
                 5 4 3 2 7 1 8 9 6\n\
@@ -267,7 +274,7 @@ mod tests {
                 5 7 _ 2 9 _ _ _ 4\n\
                 _ 5 _ _ _ _ 4 _ _\n\
                 _ _ 1 _ 7 4 _ _ 8\n\
-                _ _ _ _ 5 9 2 6 _\n\n",
+                _ _ _ _ 5 9 2 6 _\n",
 
                 "8 6 7 5 2 1 3 4 9\n\
                 1 3 5 9 4 8 7 2 6\n\
@@ -288,7 +295,7 @@ mod tests {
                 _ _ 2 _ _ _ _ _ 1\n\
                 5 _ _ _ 9 _ _ _ _\n\
                 _ _ 1 7 _ _ 2 _ _\n\
-                2 _ _ 6 _ _ _ _ 4\n\n",
+                2 _ _ 6 _ _ _ _ 4\n",
 
                 "9 8 5 2 6 7 4 1 3\n\
                 6 7 3 9 4 1 8 2 5\n\
@@ -309,7 +316,7 @@ mod tests {
                 _ _ 8 4 _ _ _ _ 9\n\
                 4 _ _ 7 _ _ 8 _ 2\n\
                 _ _ _ _ 5 _ 9 1 _\n\
-                2 6 _ _ _ _ _ _ _\n\n",
+                2 6 _ _ _ _ _ _ _\n",
 
                 "8 1 6 9 4 7 3 2 5\n\
                 3 9 4 5 2 1 6 8 7\n\
@@ -330,7 +337,7 @@ mod tests {
                 _ _ 5 _ _ 7 _ _ _\n\
                 _ 1 _ _ 6 _ _ _ _\n\
                 _ 6 _ _ 8 5 _ _ _\n\
-                _ _ 9 _ _ _ _ _ 1\n\n",
+                _ _ 9 _ _ _ _ _ 1\n",
 
                 "4 8 2 7 5 3 9 1 6\n\
                 6 9 3 2 1 8 4 7 5\n\
@@ -351,7 +358,7 @@ mod tests {
                 _ _ 4 1 _ _ 8 _ _\n\
                 5 2 _ _ 9 _ _ _ _\n\
                 _ 3 _ _ 2 _ _ 5 _\n\
-                _ 4 _ _ 6 _ 9 _ 3\n\n",
+                _ 4 _ _ 6 _ 9 _ 3\n",
 
                 "2 6 3 9 1 8 7 4 5\n\
                 4 8 5 6 3 7 2 1 9\n\
@@ -372,7 +379,7 @@ mod tests {
                 _ _ _ _ _ _ _ 2 _\n\
                 _ 6 9 _ _ _ _ 4 8\n\
                 _ _ _ 5 3 _ _ _ 7\n\
-                _ 2 _ _ _ _ _ 5 _\n\n",
+                _ 2 _ _ _ _ _ 5 _\n",
 
                 "8 5 3 4 9 6 1 7 2\n\
                 7 9 6 3 1 2 4 8 5\n\
