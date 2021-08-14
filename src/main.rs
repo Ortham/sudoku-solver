@@ -75,23 +75,19 @@ fn get_box_indices(index: usize) -> (usize, usize) {
     }
 }
 
-fn get_box_values(grid: &Grid, row_index: usize, column_index: usize) -> [Option<NonZeroU8>; 9] {
+fn get_box_values(
+    grid: &Grid,
+    row_index: usize,
+    column_index: usize,
+) -> impl Iterator<Item = &NonZeroU8> {
     let (box_start_row, box_stop_row) = get_box_indices(row_index);
     let (box_start_column, box_stop_column) = get_box_indices(column_index);
 
-    let mut values: [Option<NonZeroU8>; 9] = [None; 9];
-
-    let rows = &grid[box_start_row..box_stop_row];
-
-    let mut index = 0;
-    for row in rows.iter() {
-        for cell in &row[box_start_column..box_stop_column] {
-            values[index] = *cell;
-            index += 1;
-        }
-    }
-
-    values
+    grid[box_start_row..box_stop_row]
+        .iter()
+        .map(move |row| &row[box_start_column..box_stop_column])
+        .flatten()
+        .flat_map(|v| v)
 }
 
 fn get_possible_values(
@@ -119,9 +115,7 @@ fn get_possible_values(
     // Check the box.
     let box_values = get_box_values(grid, row_index, column_index);
     for value in box_values {
-        if let Some(n) = value {
-            seen_values[usize::from(u8::from(n)) - 1] = value;
-        }
+        seen_values[usize::from(u8::from(*value)) - 1] = Some(*value);
     }
 
     get_unseen_values(seen_values)
