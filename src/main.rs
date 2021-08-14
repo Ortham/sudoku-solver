@@ -1,9 +1,4 @@
-use std::{
-    convert::TryFrom,
-    io::{self, BufRead},
-    num::NonZeroU8,
-    str::FromStr,
-};
+use std::{convert::TryFrom, io::{self, BufRead}, num::NonZeroU8, str::FromStr};
 
 type Grid = [[Option<NonZeroU8>; 9]; 9];
 
@@ -87,7 +82,7 @@ fn get_box_values(
         .iter()
         .map(move |row| &row[box_start_column..box_stop_column])
         .flatten()
-        .flat_map(|v| v)
+        .flatten()
 }
 
 fn get_possible_values(
@@ -99,10 +94,8 @@ fn get_possible_values(
     let mut seen_values: [Option<NonZeroU8>; 9] = [None; 9];
 
     // Check the row.
-    for value in grid[row_index] {
-        if let Some(n) = value {
-            seen_values[usize::from(u8::from(n)) - 1] = value;
-        }
+    for value in grid[row_index].iter().flatten() {
+        seen_values[usize::from(u8::from(*value)) - 1] = Some(*value);
     }
 
     // Check the column.
@@ -138,7 +131,7 @@ fn print_grid(grid: &Grid) -> String {
             if index < 8 {
                 output.push(' ');
             } else {
-                output.push_str("\n");
+                output.push('\n');
             }
         }
     }
@@ -158,7 +151,7 @@ fn solve(grid: Grid) -> Grid {
 
         if is_solved(&working_grid) {
             println!("Solved sudoku in {} loops!", loop_count);
-            return working_grid.clone();
+            return working_grid;
         }
 
         'outer: for (row_index, row) in working_grid.iter().enumerate() {
@@ -173,7 +166,7 @@ fn solve(grid: Grid) -> Grid {
                     if possible_value.is_some() {
                         // For each possible value, create a new grid and add it to
                         // the stack, so that each grid is independently looped over
-                        let mut new_grid = working_grid.clone();
+                        let mut new_grid = working_grid;
                         new_grid[row_index][column_index] = possible_value;
 
                         grid_stack.push(new_grid);
