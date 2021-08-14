@@ -185,9 +185,12 @@ fn solve(grid: Grid) -> Grid {
 fn main() -> io::Result<()> {
     let grid = read_input(io::stdin().lock())?;
 
-    println!("Read values:\n{}", print_grid(&grid));
+    let start = std::time::Instant::now();
 
     let solved_grid = solve(grid);
+
+    let elapsed = start.elapsed();
+    println!("Took {} ms to solve", elapsed.as_millis());
 
     println!("Solved values:\n{}", print_grid(&solved_grid));
 
