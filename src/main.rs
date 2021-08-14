@@ -52,19 +52,17 @@ fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
     Ok(grid)
 }
 
-fn get_unseen_values(seen_values: [bool; 9]) -> Vec<NonZeroU8> {
+fn get_unseen_values(mut seen_values: [Option<NonZeroU8>; 9]) -> [Option<NonZeroU8>; 9] {
+    for (index, value) in seen_values.iter_mut().enumerate() {
+        if value.is_none() {
+            let u8_index = u8::try_from(index).expect("seen value index should be less than 9");
+            *value = NonZeroU8::new(u8_index + 1);
+        } else {
+            *value = None;
+        }
+    }
+
     seen_values
-        .iter()
-        .enumerate()
-        .filter_map(|(i, v)| {
-            if !v {
-                let uint = u8::try_from(i).expect("seen value index should be < 9");
-                NonZeroU8::new(uint + 1)
-            } else {
-                None
-            }
-        })
-        .collect()
 }
 
 fn get_box_indices(index: usize) -> (usize, usize) {
@@ -96,15 +94,18 @@ fn get_box_values(grid: &Grid, row_index: usize, column_index: usize) -> [Option
     values
 }
 
-fn get_possible_values(grid: &Grid, row_index: usize, column_index: usize) -> Vec<NonZeroU8> {
+fn get_possible_values(
+    grid: &Grid,
+    row_index: usize,
+    column_index: usize,
+) -> [Option<NonZeroU8>; 9] {
     // Possible values depend on the other values in the column, row and box.
-
-    let mut seen_values: [bool; 9] = [false; 9];
+    let mut seen_values: [Option<NonZeroU8>; 9] = [None; 9];
 
     // Check the row.
     for value in grid[row_index] {
         if let Some(n) = value {
-            seen_values[usize::from(u8::from(n)) - 1] = true;
+            seen_values[usize::from(u8::from(n)) - 1] = value;
         }
     }
 
@@ -112,14 +113,14 @@ fn get_possible_values(grid: &Grid, row_index: usize, column_index: usize) -> Ve
     let values = grid.iter().filter_map(|row| row[column_index]);
 
     for value in values {
-        seen_values[usize::from(u8::from(value)) - 1] = true;
+        seen_values[usize::from(u8::from(value)) - 1] = Some(value);
     }
 
     // Check the box.
     let box_values = get_box_values(grid, row_index, column_index);
     for value in box_values {
         if let Some(n) = value {
-            seen_values[usize::from(u8::from(n)) - 1] = true;
+            seen_values[usize::from(u8::from(n)) - 1] = value;
         }
     }
 
@@ -175,12 +176,14 @@ fn solve(grid: Grid) -> Grid {
                 let possible_values = get_possible_values(&working_grid, row_index, column_index);
 
                 for possible_value in possible_values {
-                    // For each possible value, create a new grid and add it to
-                    // the stack, so that each grid is independently looped over
-                    let mut new_grid = working_grid.clone();
-                    new_grid[row_index][column_index] = Some(possible_value);
+                    if possible_value.is_some() {
+                        // For each possible value, create a new grid and add it to
+                        // the stack, so that each grid is independently looped over
+                        let mut new_grid = working_grid.clone();
+                        new_grid[row_index][column_index] = possible_value;
 
-                    grid_stack.push(new_grid);
+                        grid_stack.push(new_grid);
+                    }
                 }
 
                 // Either the solver got stuck and couldn't find any possible
