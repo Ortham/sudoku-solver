@@ -5,17 +5,17 @@ type Grid = [[Option<NonZeroU8>; 9]; 9];
 fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
     let mut grid: [[Option<NonZeroU8>; 9]; 9] = [[None; 9]; 9];
 
-    let mut line_number = 0;
-    loop {
+    for row in grid.iter_mut() {
         let mut line = String::new();
         input.read_line(&mut line)?;
 
-        let values = line.split_ascii_whitespace().enumerate();
+        let values = line
+            .split_ascii_whitespace()
+            .map(|value| NonZeroU8::from_str(value).ok())
+            .enumerate();
 
         let mut value_count = 0;
         for (index, value) in values {
-            let value = NonZeroU8::from_str(value).ok();
-
             if let Some(n) = value.map(u8::from) {
                 if n > 9u8 {
                     return Err(io::Error::new(
@@ -25,7 +25,7 @@ fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
                 }
             }
 
-            grid[line_number][index] = value;
+            row[index] = value;
 
             value_count += 1;
         }
@@ -36,12 +36,6 @@ fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
                 "Line does not contain 9 values",
             ));
         }
-
-        if line_number == 8 {
-            break;
-        }
-
-        line_number += 1;
     }
 
     Ok(grid)
