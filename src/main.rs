@@ -1,4 +1,8 @@
-use std::{convert::TryFrom, io::{self, BufRead}, num::NonZeroU8, str::FromStr};
+use std::{
+    io::{self, BufRead},
+    num::NonZeroU8,
+    str::FromStr,
+};
 
 type Grid = [[Option<NonZeroU8>; 9]; 9];
 
@@ -41,19 +45,6 @@ fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
     Ok(grid)
 }
 
-fn get_unseen_values(mut seen_values: [Option<NonZeroU8>; 9]) -> [Option<NonZeroU8>; 9] {
-    for (index, value) in seen_values.iter_mut().enumerate() {
-        if value.is_none() {
-            let u8_index = u8::try_from(index).expect("seen value index should be less than 9");
-            *value = NonZeroU8::new(u8_index + 1);
-        } else {
-            *value = None;
-        }
-    }
-
-    seen_values
-}
-
 fn get_box_indices(index: usize) -> (usize, usize) {
     if index < 3 {
         (0, 3)
@@ -85,27 +76,37 @@ fn get_possible_values(
     column_index: usize,
 ) -> [Option<NonZeroU8>; 9] {
     // Possible values depend on the other values in the column, row and box.
-    let mut seen_values: [Option<NonZeroU8>; 9] = [None; 9];
+    let mut unseen_values: [Option<NonZeroU8>; 9] = [
+        Some(NonZeroU8::new(1).expect("1 is non-zero")),
+        Some(NonZeroU8::new(2).expect("2 is non-zero")),
+        Some(NonZeroU8::new(3).expect("3 is non-zero")),
+        Some(NonZeroU8::new(4).expect("4 is non-zero")),
+        Some(NonZeroU8::new(5).expect("5 is non-zero")),
+        Some(NonZeroU8::new(6).expect("6 is non-zero")),
+        Some(NonZeroU8::new(7).expect("7 is non-zero")),
+        Some(NonZeroU8::new(8).expect("8 is non-zero")),
+        Some(NonZeroU8::new(9).expect("9 is non-zero")),
+    ];
 
     // Check the row.
     for value in grid[row_index].iter().flatten() {
-        seen_values[usize::from(u8::from(*value)) - 1] = Some(*value);
+        unseen_values[usize::from(value.get()) - 1] = None;
     }
 
     // Check the column.
     let values = grid.iter().filter_map(|row| row[column_index]);
 
     for value in values {
-        seen_values[usize::from(u8::from(value)) - 1] = Some(value);
+        unseen_values[usize::from(value.get()) - 1] = None;
     }
 
     // Check the box.
     let box_values = get_box_values(grid, row_index, column_index);
     for value in box_values {
-        seen_values[usize::from(u8::from(*value)) - 1] = Some(*value);
+        unseen_values[usize::from(value.get()) - 1] = None;
     }
 
-    get_unseen_values(seen_values)
+    unseen_values
 }
 
 fn is_solved(grid: &Grid) -> bool {
