@@ -74,7 +74,7 @@ fn get_possible_values(
     grid: &Grid,
     row_index: usize,
     column_index: usize,
-) -> [Option<NonZeroU8>; 9] {
+) -> impl Iterator<Item = NonZeroU8> {
     // Possible values depend on the other values in the column, row and box.
     let mut unseen_values: [Option<NonZeroU8>; 9] = [
         Some(NonZeroU8::new(1).expect("1 is non-zero")),
@@ -106,7 +106,7 @@ fn get_possible_values(
         unseen_values[usize::from(value.get()) - 1] = None;
     }
 
-    unseen_values
+    IntoIterator::into_iter(unseen_values).flatten()
 }
 
 fn is_solved(grid: &Grid) -> bool {
@@ -158,14 +158,12 @@ fn solve(grid: Grid) -> Grid {
                 let possible_values = get_possible_values(&working_grid, row_index, column_index);
 
                 for possible_value in possible_values {
-                    if possible_value.is_some() {
-                        // For each possible value, create a new grid and add it to
-                        // the stack, so that each grid is independently looped over
-                        let mut new_grid = working_grid;
-                        new_grid[row_index][column_index] = possible_value;
+                    // For each possible value, create a new grid and add it to
+                    // the stack, so that each grid is independently looped over
+                    let mut new_grid = working_grid;
+                    new_grid[row_index][column_index] = Some(possible_value);
 
-                        grid_stack.push(new_grid);
-                    }
+                    grid_stack.push(new_grid);
                 }
 
                 // Either the solver got stuck and couldn't find any possible
