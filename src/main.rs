@@ -4,10 +4,13 @@ use std::{
     str::FromStr,
 };
 
-type Grid = [[Option<NonZeroU8>; 9]; 9];
+// The maximum value of a cell is also the number of rows and the number of columns per row.
+const MAX_VALUE: usize = 9;
+
+type Grid = [[Option<NonZeroU8>; MAX_VALUE]; MAX_VALUE];
 
 fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
-    let mut grid: [[Option<NonZeroU8>; 9]; 9] = [[None; 9]; 9];
+    let mut grid: Grid = [[None; MAX_VALUE]; MAX_VALUE];
 
     for row in grid.iter_mut() {
         let mut line = String::new();
@@ -21,10 +24,10 @@ fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
         let mut value_count = 0;
         for (index, value) in values {
             if let Some(n) = value.map(u8::from) {
-                if n > 9u8 {
+                if usize::from(n) > MAX_VALUE {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
-                        "Cell value is greater than 9",
+                        format!("Cell value is greater than {}", MAX_VALUE),
                     ));
                 }
             }
@@ -34,10 +37,10 @@ fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
             value_count += 1;
         }
 
-        if value_count != 9 {
+        if value_count != MAX_VALUE {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "Line does not contain 9 values",
+                format!("Line does not contain {} values", MAX_VALUE),
             ));
         }
     }
@@ -76,7 +79,7 @@ fn get_possible_values(
     column_index: usize,
 ) -> impl Iterator<Item = NonZeroU8> {
     // Possible values depend on the other values in the column, row and box.
-    let mut unseen_values: [Option<NonZeroU8>; 9] = [
+    let mut unseen_values: [Option<NonZeroU8>; MAX_VALUE] = [
         Some(NonZeroU8::new(1).expect("1 is non-zero")),
         Some(NonZeroU8::new(2).expect("2 is non-zero")),
         Some(NonZeroU8::new(3).expect("3 is non-zero")),
@@ -114,7 +117,9 @@ fn is_solved(grid: &Grid) -> bool {
 }
 
 fn print_grid(grid: &Grid) -> String {
-    let mut output = String::with_capacity(9 * 9 * 2);
+    // Each cell's value as a string takes up one byte, and is followed by a
+    // single byte of whitespace.
+    let mut output = String::with_capacity(MAX_VALUE * MAX_VALUE * 2);
 
     for row in grid {
         for (index, cell) in row.iter().enumerate() {
