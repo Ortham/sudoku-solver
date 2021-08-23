@@ -1,13 +1,13 @@
-use std::{
-    io::{self, BufRead},
-    num::NonZeroU8,
-    str::FromStr,
-};
+use std::io::{self, BufRead};
+
+use cell_value::CellValue;
+
+mod cell_value;
 
 // The maximum value of a cell is also the number of rows and the number of columns per row.
 const MAX_VALUE: usize = 9;
 
-type Grid = [[Option<NonZeroU8>; MAX_VALUE]; MAX_VALUE];
+type Grid = [[Option<CellValue>; MAX_VALUE]; MAX_VALUE];
 
 fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
     let mut grid: Grid = [[None; MAX_VALUE]; MAX_VALUE];
@@ -18,20 +18,11 @@ fn read_input<T: BufRead>(mut input: T) -> io::Result<Grid> {
 
         let values = line
             .split_ascii_whitespace()
-            .map(|value| NonZeroU8::from_str(value).ok())
+            .map(|value| CellValue::from_str(value))
             .enumerate();
 
         let mut value_count = 0;
         for (index, value) in values {
-            if let Some(n) = value.map(u8::from) {
-                if usize::from(n) > MAX_VALUE {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        format!("Cell value is greater than {}", MAX_VALUE),
-                    ));
-                }
-            }
-
             row[index] = value;
 
             value_count += 1;
@@ -62,7 +53,7 @@ fn get_box_values(
     grid: &Grid,
     row_index: usize,
     column_index: usize,
-) -> impl Iterator<Item = &NonZeroU8> {
+) -> impl Iterator<Item = &CellValue> {
     let (box_start_row, box_stop_row) = get_box_indices(row_index);
     let (box_start_column, box_stop_column) = get_box_indices(column_index);
 
@@ -77,36 +68,36 @@ fn get_possible_values(
     grid: &Grid,
     row_index: usize,
     column_index: usize,
-) -> impl Iterator<Item = NonZeroU8> {
+) -> impl Iterator<Item = CellValue> {
     // Possible values depend on the other values in the column, row and box.
-    let mut unseen_values: [Option<NonZeroU8>; MAX_VALUE] = [
-        Some(NonZeroU8::new(1).expect("1 is non-zero")),
-        Some(NonZeroU8::new(2).expect("2 is non-zero")),
-        Some(NonZeroU8::new(3).expect("3 is non-zero")),
-        Some(NonZeroU8::new(4).expect("4 is non-zero")),
-        Some(NonZeroU8::new(5).expect("5 is non-zero")),
-        Some(NonZeroU8::new(6).expect("6 is non-zero")),
-        Some(NonZeroU8::new(7).expect("7 is non-zero")),
-        Some(NonZeroU8::new(8).expect("8 is non-zero")),
-        Some(NonZeroU8::new(9).expect("9 is non-zero")),
+    let mut unseen_values: [Option<CellValue>; MAX_VALUE] = [
+        Some(CellValue::new(1).expect("1 is non-zero")),
+        Some(CellValue::new(2).expect("2 is non-zero")),
+        Some(CellValue::new(3).expect("3 is non-zero")),
+        Some(CellValue::new(4).expect("4 is non-zero")),
+        Some(CellValue::new(5).expect("5 is non-zero")),
+        Some(CellValue::new(6).expect("6 is non-zero")),
+        Some(CellValue::new(7).expect("7 is non-zero")),
+        Some(CellValue::new(8).expect("8 is non-zero")),
+        Some(CellValue::new(9).expect("9 is non-zero")),
     ];
 
     // Check the row.
     for value in grid[row_index].iter().flatten() {
-        unseen_values[usize::from(value.get()) - 1] = None;
+        unseen_values[usize::from(value) - 1] = None;
     }
 
     // Check the column.
     let values = grid.iter().filter_map(|row| row[column_index]);
 
     for value in values {
-        unseen_values[usize::from(value.get()) - 1] = None;
+        unseen_values[usize::from(value) - 1] = None;
     }
 
     // Check the box.
     let box_values = get_box_values(grid, row_index, column_index);
     for value in box_values {
-        unseen_values[usize::from(value.get()) - 1] = None;
+        unseen_values[usize::from(value) - 1] = None;
     }
 
     IntoIterator::into_iter(unseen_values).flatten()
@@ -204,8 +195,8 @@ mod tests {
 
     #[test]
     fn read_input_should_split_by_whitespace_and_treat_non_numeric_values_as_empties() {
-        fn n(v: u8) -> Option<NonZeroU8> {
-            NonZeroU8::new(v)
+        fn n(v: u8) -> Option<CellValue> {
+            CellValue::new(v)
         }
 
         let input = "_ 6 2 _ 9 8 1 _ 4\n\
