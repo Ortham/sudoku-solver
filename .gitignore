@@ -1,2 +1,4 @@
 # Unversioned build directory for master branch.
 /target
+/.stack-work
+/dist-newstyle/
